@@ -8,15 +8,17 @@ from src.services import cart as cart_service
 
 
 async def show_cart(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    if update.message is None:
+    if update.message is None or update.effective_user is None:
         return
-    text, _total = cart_service.cart_lines(context)
-    markup = None if cart_service.is_empty(context) else cart_keyboard(context)
+    cart = await cart_service.items(context, update.effective_user.id)
+    text, _total = cart_service.format_cart(cart)
+    markup = cart_keyboard(cart) if cart else None
     await update.message.reply_text(text, reply_markup=markup)
     await update.message.reply_text("Меню «Вояж-тур».", reply_markup=main_menu())
 
 
 async def edit_cart_message(query, context: ContextTypes.DEFAULT_TYPE) -> None:
-    text, _total = cart_service.cart_lines(context)
-    markup = None if cart_service.is_empty(context) else cart_keyboard(context)
+    cart = await cart_service.items(context, query.from_user.id)
+    text, _total = cart_service.format_cart(cart)
+    markup = cart_keyboard(cart) if cart else None
     await query.edit_message_text(text, reply_markup=markup)

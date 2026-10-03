@@ -36,7 +36,8 @@ from src.handlers.callbacks import on_callback
 from src.handlers.cart import show_cart
 from src.handlers.catalog import show_catalog
 from src.handlers.checkout import build_checkout_handler
-from src.handlers.start import help_command, menu_buttons, show_menu, start
+from src.handlers.manager import manager_command, on_manager_callback
+from src.handlers.start import help_command, menu_buttons, my_id, show_menu, start
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -79,6 +80,10 @@ def main() -> None:
     application.add_handler(CommandHandler("menu", show_menu))
     application.add_handler(CommandHandler("catalog", show_catalog))
     application.add_handler(CommandHandler("cart", show_cart))
+    application.add_handler(CommandHandler("myid", my_id))
+    application.add_handler(CommandHandler("manager", manager_command))
+    # Обработчик менеджера должен стоять выше общего on_callback.
+    application.add_handler(CallbackQueryHandler(on_manager_callback, pattern=r"^mgr:"))
     application.add_handler(CallbackQueryHandler(on_callback))
     application.add_handler(
         MessageHandler(filters.TEXT & ~filters.COMMAND, menu_buttons)

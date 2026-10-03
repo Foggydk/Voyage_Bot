@@ -8,6 +8,11 @@ from src.handlers.cart import edit_cart_message
 from src.handlers.catalog import send_catalog_edit, send_tour_card
 from src.services import cart as cart_service
 
+STALE_CHECKOUT = (
+    "Эта кнопка уже не работает: заявка оформлена, отменена или бот перезапускался. "
+    "Проверьте «Мои заказы» или откройте корзину заново."
+)
+
 
 async def on_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
@@ -37,12 +42,20 @@ async def on_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         await _handle_cart_action(query, context, action, tour_id)
         return
 
+    # Кнопки оформления сюда попадают, только если диалог уже завершён:
+    # например, повторное нажатие «Подтвердить заявку».
+    if parts[0] == "checkout":
+        await query.answer(STALE_CHECKOUT, show_alert=True)
+        return
+
     await query.answer("Неизвестная кнопка.", show_alert=True)
 
 
 async def _handle_cart_action(query, context, action: str, tour_id: int) -> None:
+    user_id = query.from_user.id
+
     if action == "add":
-        tour = cart_service.add_item(context, tour_id)
+        tour = await cart_service.add_item(context, user_id, tour_id)
         if tour is None:
             await query.answer("Не удалось добавить тур.", show_alert=True)
             return
@@ -50,7 +63,7 @@ async def _handle_cart_action(query, context, action: str, tour_id: int) -> None
         return
 
     if action == "inc":
-        error = cart_service.change_quantity(context, tour_id, 1)
+        error = await cart_service.change_quantity(context, user_id, tour_id, 1)
         if error:
             await query.answer(error, show_alert=True)
             return
@@ -59,7 +72,7 @@ async def _handle_cart_action(query, context, action: str, tour_id: int) -> None
         return
 
     if action == "dec":
-        error = cart_service.change_quantity(context, tour_id, -1)
+        error = await cart_service.change_quantity(context, user_id, tour_id, -1)
         if error:
             await query.answer(error, show_alert=True)
             return
@@ -68,7 +81,7 @@ async def _handle_cart_action(query, context, action: str, tour_id: int) -> None
         return
 
     if action == "del":
-        removed = cart_service.remove_item(context, tour_id)
+        removed = await cart_service.remove_item(context, user_id, tour_id)
         if not removed:
             await query.answer("Позиции уже нет в корзине.", show_alert=True)
             return

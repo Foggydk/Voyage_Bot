@@ -41,6 +41,11 @@ ASK_NAME_TEXT = (
 NEED_BUTTONS = "Сейчас оформление заявки. Выберите пункт на кнопках или /cancel."
 MENU_BUTTONS = {BTN_CATALOG, BTN_AI, BTN_CART, BTN_ORDERS, BTN_HELP}
 CANCELLED = "Оформление отменено. Корзина сохранена."
+EMPTY_CART_TEXT = "Корзина пуста. Добавьте тур из каталога."
+ALREADY_DONE_TEXT = (
+    "Корзина пуста — заявку сохранить нельзя. "
+    "Если вы уже подтверждали заявку, она в разделе «Мои заказы»."
+)
 DB_REQUIRED = (
     "Чтобы сохранить заявку, укажите рабочий DATABASE_URL в .env "
     "(пароль PostgreSQL вместо YOUR_PASSWORD) и перезапустите бота."
@@ -84,17 +89,18 @@ async def start_checkout(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     query = update.callback_query
     if query is not None:
         await query.answer()
-
-    if get_pool(context) is None:
-        text = DB_REQUIRED
-        if query is not None:
-            await query.edit_message_text(text)
+    if update.effective_user is None:
         return ConversationHandler.END
 
-    if cart_service.is_empty(context):
-        text = "Корзина пуста. Добавьте тур из каталога."
+    if get_pool(context) is None:
         if query is not None:
-            await query.edit_message_text(text)
+            await query.edit_message_text(DB_REQUIRED)
+        return ConversationHandler.END
+
+    cart = await cart_service.items(context, update.effective_user.id)
+    if not cart:
+        if query is not None:
+            await query.edit_message_text(EMPTY_CART_TEXT)
         return ConversationHandler.END
 
     _clear_draft(context)
@@ -128,16 +134,23 @@ async def receive_name(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
 
 async def receive_pickup(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     query = update.callback_query
-    if query is None or query.data is None:
+    if query is None or query.data is None or update.effective_user is None:
         return ASK_PICKUP
     code = query.data.rsplit(":", 1)[-1]
     if code not in orders_service.PICKUP_LABELS:
         await query.answer("Неизвестный способ получения.", show_alert=True)
         return ASK_PICKUP
     await query.answer()
+
+    cart = await cart_service.items(context, update.effective_user.id)
+    if not cart:
+        _clear_draft(context)
+        await query.edit_message_text(EMPTY_CART_TEXT)
+        return ConversationHandler.END
+
     context.user_data[PICKUP_KEY] = code
     await query.edit_message_text(
-        _summary_text(context),
+        _summary_text(context, cart),
         reply_markup=checkout_confirm_keyboard(),
     )
     return CONFIRM
@@ -153,20 +166,21 @@ async def confirm_order(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
     if pool is None or not name or not pickup:
         await query.answer("Данные заявки сброшены. Начните оформление снова.", show_alert=True)
         return ConversationHandler.END
-    if cart_service.is_empty(context):
-        await query.answer("Корзина пуста.", show_alert=True)
-        await query.edit_message_text("Корзина пуста, заявку сохранить нельзя.")
-        _clear_draft(context)
-        return ConversationHandler.END
 
     try:
+        # Корзина забирается из БД в той же транзакции, что и создание заявки.
+        # Повторное нажатие найдёт пустую корзину и вторую заявку не создаст.
         order = await orders_service.create_order(
             pool,
             update.effective_user,
             name,
             pickup,
-            cart_service.items(context),
         )
+    except orders_service.EmptyCartError:
+        _clear_draft(context)
+        await query.answer("Корзина пуста. Возможно, заявка уже оформлена.", show_alert=True)
+        await query.edit_message_text(ALREADY_DONE_TEXT)
+        return ConversationHandler.END
     except Exception:
         logger.exception("Ошибка записи заявки в PostgreSQL")
         await query.answer("Не удалось сохранить заявку.", show_alert=True)
@@ -175,7 +189,6 @@ async def confirm_order(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
         )
         return CONFIRM
 
-    cart_service.clear(context)
     _clear_draft(context)
     await query.answer("Заявка сохранена")
     await query.edit_message_text(
@@ -213,10 +226,10 @@ async def cancel_checkout(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     return ConversationHandler.END
 
 
-def _summary_text(context: ContextTypes.DEFAULT_TYPE) -> str:
+def _summary_text(context: ContextTypes.DEFAULT_TYPE, cart: dict[int, int]) -> str:
     name = context.user_data.get(NAME_KEY, "")
     pickup = context.user_data.get(PICKUP_KEY, "")
-    cart_text, _total = cart_service.cart_lines(context)
+    cart_text, _total = cart_service.format_cart(cart)
     return (
         "Проверьте заявку:\n\n"
         f"Имя: {name}\n"

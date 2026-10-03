@@ -1,10 +1,8 @@
 """Клавиатуры Telegram. ReplyKeyboardMarkup и InlineKeyboardMarkup — PTB v22."""
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
-from telegram.ext import ContextTypes
 
 from src.data.tours import Tour, TOURS, get_tour
-from src.services import cart as cart_service
 
 BTN_CATALOG = "🌴 Каталог туров"
 BTN_AI = "✨ Индивидуальный тур"
@@ -46,9 +44,10 @@ def tour_card_keyboard(tour: Tour) -> InlineKeyboardMarkup:
     )
 
 
-def cart_keyboard(context: ContextTypes.DEFAULT_TYPE) -> InlineKeyboardMarkup:
+def cart_keyboard(cart: dict[int, int]) -> InlineKeyboardMarkup:
+    """Клавиатура корзины. cart — это {tour_id: количество}."""
     rows: list[list[InlineKeyboardButton]] = []
-    for tour_id, quantity in cart_service.items(context).items():
+    for tour_id, quantity in cart.items():
         tour = get_tour(tour_id)
         label = tour.title if tour else f"Тур #{tour_id}"
         rows.append(

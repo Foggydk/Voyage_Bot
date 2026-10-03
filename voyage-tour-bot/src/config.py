@@ -32,3 +32,14 @@ def get_database_url() -> str | None:
     if not url or "YOUR_PASSWORD" in url:
         return None
     return url
+
+
+def get_manager_ids() -> set[int]:
+    """ID менеджеров из MANAGER_TELEGRAM_ID (можно несколько через запятую)."""
+    raw = os.getenv("MANAGER_TELEGRAM_ID", "")
+    ids: set[int] = set()
+    for part in raw.split(","):
+        part = part.strip()
+        if part.isdigit():
+            ids.add(int(part))
+    return ids

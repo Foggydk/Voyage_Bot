@@ -85,3 +85,9 @@ async def menu_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         "Не понял сообщение. Нажмите кнопку меню или /help.",
         reply_markup=main_menu(),
     )
+
+
+async def my_id(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if update.message is None or update.effective_user is None:
+        return
+    await update.message.reply_text(f"Ваш Telegram ID: {update.effective_user.id}")

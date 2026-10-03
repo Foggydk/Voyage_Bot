@@ -30,6 +30,10 @@ PAYMENT_NOTE = "pay_on_receipt"
 PAYMENT_LABEL = "оплата при получении"
 
 
+class EmptyCartError(Exception):
+    """Корзина пуста: нечего оформлять (или заявка уже оформлена)."""
+
+
 @dataclass(frozen=True)
 class OrderItemView:
     title: str
@@ -82,27 +86,37 @@ async def create_order(
     telegram_user: User,
     recipient_name: str,
     pickup_method: str,
-    cart_items: dict[int, int],
 ) -> OrderView:
+    """Создаёт заявку из корзины пользователя, которая лежит в БД.
+
+    Корзина забирается в той же транзакции (DELETE ... RETURNING), поэтому
+    повторное подтверждение не создаст вторую заявку: корзина уже пуста.
+    """
     if pickup_method not in PICKUP_LABELS:
         raise ValueError("Неизвестный способ получения документов.")
-    if not cart_items:
-        raise ValueError("Корзина пуста.")
-
-    prepared: list[tuple[int, str, int, int]] = []
-    total = 0
-    for tour_id, quantity in cart_items.items():
-        tour = get_tour(tour_id)
-        if tour is None:
-            raise ValueError("В корзине есть тур, которого нет в каталоге.")
-        if quantity < 1:
-            raise ValueError("Количество должно быть больше нуля.")
-        prepared.append((tour.id, tour.title, tour.price, quantity))
-        total += tour.price * quantity
 
     async with pool.acquire() as conn:
         async with conn.transaction():
             db_user_id = await _user_id(conn, telegram_user)
+            cart_rows = await conn.fetch(
+                "DELETE FROM cart_items WHERE user_id = $1 RETURNING product_id, quantity",
+                db_user_id,
+            )
+            if not cart_rows:
+                raise EmptyCartError("Корзина пуста.")
+
+            prepared: list[tuple[int, str, int, int]] = []
+            total = 0
+            for row in sorted(cart_rows, key=lambda r: r["product_id"]):
+                tour = get_tour(int(row["product_id"]))
+                quantity = int(row["quantity"])
+                if tour is None:
+                    raise ValueError("В корзине есть тур, которого нет в каталоге.")
+                if quantity < 1:
+                    raise ValueError("Количество должно быть больше нуля.")
+                prepared.append((tour.id, tour.title, tour.price, quantity))
+                total += tour.price * quantity
+
             temp_number = f"tmp-{telegram_user.id}-{int(datetime.now().timestamp() * 1000)}"
             order = await conn.fetchrow(
                 """
@@ -215,3 +229,122 @@ async def list_orders(pool: asyncpg.Pool, telegram_id: int) -> list[OrderView]:
             )
         )
     return result
+
+
+# ---------------------------------------------------------------------------
+# Кабинет менеджера
+# ---------------------------------------------------------------------------
+
+ALLOWED_TRANSITIONS: dict[str, tuple[str, ...]] = {
+    "new": ("confirmed", "cancelled"),
+    "confirmed": ("in_progress", "cancelled"),
+    "in_progress": ("completed", "cancelled"),
+    "completed": (),
+    "cancelled": (),
+}
+
+_ORDER_SELECT = """
+    SELECT
+        o.public_number,
+        o.status,
+        o.recipient_name,
+        o.pickup_method,
+        o.total_amount,
+        o.created_at,
+        u.telegram_id,
+        COALESCE(
+            json_agg(
+                json_build_object(
+                    'title', oi.title_snapshot,
+                    'quantity', oi.quantity,
+                    'price', oi.price_snapshot
+                )
+                ORDER BY oi.id
+            ) FILTER (WHERE oi.id IS NOT NULL),
+            '[]'::json
+        ) AS items
+    FROM orders o
+    JOIN users u ON u.id = o.user_id
+    LEFT JOIN order_items oi ON oi.order_id = o.id
+    {where}
+    GROUP BY o.id, u.telegram_id
+    ORDER BY o.created_at {direction}
+"""
+
+
+def _row_to_view(row) -> OrderView:
+    raw_items = row["items"]
+    if raw_items is None:
+        raw_items = []
+    elif isinstance(raw_items, str):
+        raw_items = json.loads(raw_items)
+    items = tuple(
+        OrderItemView(
+            title=item["title"],
+            quantity=int(item["quantity"]),
+            price=_money(item["price"]),
+        )
+        for item in raw_items
+    )
+    return OrderView(
+        public_number=row["public_number"],
+        status=row["status"],
+        recipient_name=row["recipient_name"],
+        pickup_method=row["pickup_method"],
+        total_amount=_money(row["total_amount"]),
+        created_at=row["created_at"],
+        items=items,
+    )
+
+
+async def list_by_status(pool: asyncpg.Pool, status: str) -> list[OrderView]:
+    query = _ORDER_SELECT.format(where="WHERE o.status = $1", direction="ASC")
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(query, status)
+    return [_row_to_view(row) for row in rows]
+
+
+async def get_order(
+    pool: asyncpg.Pool, public_number: str
+) -> tuple[OrderView, int] | None:
+    """Заказ и Telegram ID клиента. Для менеджера."""
+    query = _ORDER_SELECT.format(where="WHERE o.public_number = $1", direction="ASC")
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(query, public_number)
+    if row is None:
+        return None
+    return _row_to_view(row), int(row["telegram_id"])
+
+
+async def change_status(
+    pool: asyncpg.Pool, public_number: str, new_status: str
+) -> tuple[str | None, int | None]:
+    """Возвращает (текст ошибки или None, Telegram ID клиента)."""
+    if new_status not in STATUS_LABELS:
+        return "Неизвестный статус.", None
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            row = await conn.fetchrow(
+                """
+                SELECT o.id, o.status, u.telegram_id
+                FROM orders o JOIN users u ON u.id = o.user_id
+                WHERE o.public_number = $1
+                FOR UPDATE OF o
+                """,
+                public_number,
+            )
+            if row is None:
+                return "Заявка не найдена.", None
+            current = row["status"]
+            if new_status not in ALLOWED_TRANSITIONS.get(current, ()):
+                return (
+                    f"Нельзя перевести из «{status_label(current)}» "
+                    f"в «{status_label(new_status)}». Откройте заявку заново.",
+                    None,
+                )
+            await conn.execute(
+                "UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2",
+                new_status,
+                row["id"],
+            )
+    return None, int(row["telegram_id"])
