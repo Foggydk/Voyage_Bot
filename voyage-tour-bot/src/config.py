@@ -32,3 +32,32 @@ def get_database_url() -> str | None:
     if not url or "YOUR_PASSWORD" in url:
         return None
     return url
+
+
+def get_manager_ids() -> set[int]:
+    """ID менеджеров из MANAGER_TELEGRAM_ID (можно несколько через запятую)."""
+    raw = os.getenv("MANAGER_TELEGRAM_ID", "")
+    ids: set[int] = set()
+    for part in raw.split(","):
+        part = part.strip()
+        if part.isdigit():
+            ids.add(int(part))
+    return ids
+
+
+def get_mini_app_url() -> str:
+    from urllib.parse import urlsplit
+
+    url = os.getenv("MINI_APP_URL", "").strip().rstrip("/")
+    if url:
+        parsed = urlsplit(url)
+        if (
+            parsed.scheme != "https"
+            or not parsed.netloc
+            or parsed.username
+            or parsed.password
+        ):
+            raise ValueError(
+                "MINI_APP_URL должен быть публичным HTTPS-адресом без секретов."
+            )
+    return url

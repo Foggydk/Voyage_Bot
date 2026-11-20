@@ -1,4 +1,4 @@
-""" /start, /help, /menu и кнопки главного меню."""
+"""/start, /help, /menu и кнопки главного меню."""
 
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -34,11 +34,13 @@ HELP_TEXT = (
     "2. Откройте карточку и добавьте тур в корзину.\n"
     "3. В корзине можно изменить количество или убрать позицию.\n"
     "4. Оформление заказа: имя и способ получения документов.\n"
-    "5. Оплата — расчёт при получении.\n"
+    "5. Нажмите «Учебная оплата» и выберите результат имитации.\n"
     "6. В «Мои заказы» видны только ваши заявки.\n\n"
     "«Индивидуальный тур» — помощник под ваши даты и бюджет. "
     "Подключение ИИ сделаем отдельным шагом.\n\n"
-    "Заявка сохраняется в базе. Оплата — при получении документов."
+    "Заявка сохраняется в базе. Демонстрация без платёжного провайдера: реальные деньги не списываются.\n"
+    "/orders — ваши заказы; /myid — ваш Telegram ID.\n"
+    "Менеджеру: /manager — кабинет, /summary — финансовая сводка."
 )
 
 
@@ -57,7 +59,9 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 async def show_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if update.message is None:
         return
-    await update.message.reply_text("Главное меню «Вояж-тур».", reply_markup=main_menu())
+    await update.message.reply_text(
+        "Главное меню «Вояж-тур».", reply_markup=main_menu()
+    )
 
 
 async def menu_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -85,3 +89,9 @@ async def menu_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         "Не понял сообщение. Нажмите кнопку меню или /help.",
         reply_markup=main_menu(),
     )
+
+
+async def my_id(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if update.message is None or update.effective_user is None:
+        return
+    await update.message.reply_text(f"Ваш Telegram ID: {update.effective_user.id}")

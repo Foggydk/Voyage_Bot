@@ -56,9 +56,9 @@ async def seed_products(pool: asyncpg.Pool) -> None:
                     """
                     INSERT INTO products (
                         id, title, description, destination,
-                        tour_type, duration_days, price, is_active
+                        tour_type, duration_days, price, cost_price, is_active
                     )
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, TRUE)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, TRUE)
                     ON CONFLICT (id) DO UPDATE SET
                         title = EXCLUDED.title,
                         description = EXCLUDED.description,
@@ -66,6 +66,7 @@ async def seed_products(pool: asyncpg.Pool) -> None:
                         tour_type = EXCLUDED.tour_type,
                         duration_days = EXCLUDED.duration_days,
                         price = EXCLUDED.price,
+                        cost_price = EXCLUDED.cost_price,
                         is_active = TRUE
                     """,
                     tour.id,
@@ -75,6 +76,7 @@ async def seed_products(pool: asyncpg.Pool) -> None:
                     tour.tour_type,
                     tour.duration_days,
                     tour.price,
+                    tour.cost,
                 )
             await conn.execute(
                 """
@@ -84,12 +86,42 @@ async def seed_products(pool: asyncpg.Pool) -> None:
                 )
                 """
             )
+            # Старые позиции заказа без снимка: берём текущую себестоимость каталога.
+            # Это восстановление, не историческая цена закупки на дату заказа.
+            await conn.execute(
+                """
+                UPDATE order_items AS oi
+                SET cost_snapshot = p.cost_price, cost_estimated = TRUE
+                FROM products AS p
+                WHERE oi.product_id = p.id
+                  AND oi.cost_snapshot IS NULL
+                  AND p.cost_price IS NOT NULL
+                """
+            )
+            await conn.execute(
+                "INSERT INTO stock_balances(product_id) SELECT id FROM products ON CONFLICT DO NOTHING"
+            )
+            migration = await conn.fetchval("""
+                INSERT INTO schema_migrations(name) VALUES ('finance_event_cost_v1')
+                ON CONFLICT DO NOTHING RETURNING name
+            """)
+            if migration:
+                await conn.execute("""
+                    UPDATE finance_operations f SET cost_kopecks=x.cost
+                    FROM (SELECT order_id,(SUM(cost_snapshot*quantity)*100)::bigint AS cost
+                          FROM order_items GROUP BY order_id HAVING bool_and(cost_snapshot IS NOT NULL)) x
+                    WHERE f.order_id=x.order_id AND f.type IN ('receipt','refund')
+                """)
 
 
 async def connect_database(application: Application, dsn: str) -> None:
-    pool = await asyncpg.create_pool(dsn, min_size=1, max_size=5)
-    await apply_schema(pool)
-    await seed_products(pool)
+    pool = await asyncpg.create_pool(dsn, min_size=1, max_size=5, command_timeout=15)
+    try:
+        await apply_schema(pool)
+        await seed_products(pool)
+    except BaseException:
+        await pool.close()
+        raise
     application.bot_data[POOL_KEY] = pool
     logger.info("PostgreSQL подключена, схема и каталог готовы.")
 

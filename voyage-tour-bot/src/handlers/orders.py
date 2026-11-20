@@ -8,6 +8,8 @@ from src.db import get_pool
 from src.handlers.checkout import DB_REQUIRED
 from src.keyboards import main_menu
 from src.services import orders as orders_service
+from src.handlers.payments import payment_keyboard
+from datetime import datetime, timezone
 
 
 def format_order(order: orders_service.OrderView) -> str:
@@ -26,6 +28,17 @@ def format_order(order: orders_service.OrderView) -> str:
             f"= {format_price(subtotal)}"
         )
     lines.append(f"Итого: {format_price(order.total_amount)}")
+    if order.expires_at is not None and order.reservation_status == "active":
+        remaining = max(
+            0, int((order.expires_at - datetime.now(timezone.utc)).total_seconds())
+        )
+        lines.append(
+            f"Резерв: осталось {remaining} сек. Подтверждение после срока — полный учебный возврат."
+        )
+    if order.status == "payment_conflict":
+        lines.append(
+            "Резерв закончился, оформляется возврат. Места повторно не резервируются."
+        )
     return "\n".join(lines)
 
 
@@ -43,8 +56,10 @@ async def show_orders(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             reply_markup=main_menu(),
         )
         return
-    chunks = [format_order(order) for order in orders]
-    await update.message.reply_text(
-        "Ваши заявки:\n\n" + "\n\n".join(chunks),
-        reply_markup=main_menu(),
-    )
+    for order in orders:
+        await update.message.reply_text(
+            format_order(order),
+            reply_markup=payment_keyboard(order.public_number, order.payment_status)
+            if order.status == "awaiting_payment"
+            else None,
+        )

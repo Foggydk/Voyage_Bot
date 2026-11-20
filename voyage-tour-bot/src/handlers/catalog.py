@@ -5,6 +5,8 @@ from telegram.ext import ContextTypes
 
 from src.data.tours import TOUR_TYPE_LABELS, Tour, format_price, get_tour
 from src.keyboards import catalog_keyboard, tour_card_keyboard
+from src.db import get_pool
+from src.services.inventory import balances
 
 CATALOG_INTRO = (
     "Каталог «Вояж-тур»: готовые программы по Азии.\n"
@@ -28,21 +30,36 @@ async def show_catalog(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     if update.message is None:
         return
     await update.message.reply_text(
-        CATALOG_INTRO,
+        CATALOG_INTRO + await availability(context),
         reply_markup=catalog_keyboard(),
     )
 
 
-async def send_catalog_edit(query) -> None:
-    await query.edit_message_text(CATALOG_INTRO, reply_markup=catalog_keyboard())
+async def availability(context, tour_id=None):
+    pool = get_pool(context)
+    if pool is None:
+        return "\nОстатки временно недоступны."
+    rows = await balances(pool)
+    return "\n\n" + "\n".join(
+        f"{r['title']}: "
+        + (f"доступно {r['available']} мест" if r["available"] else "Нет в наличии")
+        for r in rows
+        if tour_id is None or r["product_id"] == tour_id
+    )
 
 
-async def send_tour_card(query, tour_id: int) -> None:
+async def send_catalog_edit(query, context) -> None:
+    await query.edit_message_text(
+        CATALOG_INTRO + await availability(context), reply_markup=catalog_keyboard()
+    )
+
+
+async def send_tour_card(query, tour_id: int, context) -> None:
     tour = get_tour(tour_id)
     if tour is None:
         await query.answer("Тур не найден.", show_alert=True)
         return
     await query.edit_message_text(
-        format_tour_card(tour),
+        format_tour_card(tour) + await availability(context, tour_id),
         reply_markup=tour_card_keyboard(tour),
     )

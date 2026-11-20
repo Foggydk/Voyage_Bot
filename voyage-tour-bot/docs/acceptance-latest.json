@@ -1,0 +1,837 @@
+{
+  "command": "python -m tests.run --reservation-seconds 90",
+  "parameters": {
+    "stock_buyers": [
+      [
+        1,
+        20
+      ],
+      [
+        10,
+        50
+      ]
+    ],
+    "repeats": 5,
+    "reservation_seconds": 90
+  },
+  "finished_at": "2026-11-20T13:33:23.969991+00:00",
+  "tests": 23,
+  "success": true,
+  "seconds": 64.12,
+  "rows": [
+    {
+      "scenario": "tests.test_finance.AuthTests.test_money",
+      "expected": "Все утверждения выполнены",
+      "actual": "Все проверки выполнены",
+      "status": "passed"
+    },
+    {
+      "scenario": "tests.test_finance.AuthTests.test_signature_age_and_duplicates",
+      "expected": "Все утверждения выполнены",
+      "actual": "Все проверки выполнены",
+      "status": "passed"
+    },
+    {
+      "scenario": "tests.test_finance.FinanceTests.test_api_permissions_and_periods",
+      "expected": "Все утверждения выполнены",
+      "actual": "Все проверки выполнены",
+      "status": "passed"
+    },
+    {
+      "scenario": "tests.test_finance.FinanceTests.test_cancel_ownership_amount_currency_and_rollback",
+      "expected": "Все утверждения выполнены",
+      "actual": "Все проверки выполнены",
+      "status": "passed"
+    },
+    {
+      "scenario": "tests.test_finance.FinanceTests.test_canceled_payment_buttons_after_reopening_order",
+      "expected": "Отмена платежа, повторное открытие заказа, освобождение мест и возврат в каталог.",
+      "actual": "Все проверки выполнены",
+      "status": "passed"
+    },
+    {
+      "scenario": "tests.test_finance.FinanceTests.test_checkout_button_recovers_after_lost_response",
+      "expected": "Потеря ответа после commit: та же кнопка восстанавливает единственный заказ.",
+      "actual": "Все проверки выполнены",
+      "status": "passed"
+    },
+    {
+      "scenario": "tests.test_finance.FinanceTests.test_expense_validation_idempotence_audit",
+      "expected": "Все утверждения выполнены",
+      "actual": "Все проверки выполнены",
+      "status": "passed"
+    },
+    {
+      "scenario": "tests.test_finance.FinanceTests.test_full_lifecycle_and_persistence",
+      "expected": "Все утверждения выполнены",
+      "actual": "Все проверки выполнены",
+      "status": "passed"
+    },
+    {
+      "scenario": "tests.test_finance.FinanceTests.test_price_and_cost_snapshots_keep_kopecks",
+      "expected": "Все утверждения выполнены",
+      "actual": "Все проверки выполнены",
+      "status": "passed"
+    },
+    {
+      "scenario": "Ручная цепочка",
+      "expected": [
+        [
+          10,
+          0,
+          10
+        ],
+        [
+          10,
+          3,
+          7
+        ],
+        [
+          7,
+          0,
+          7
+        ],
+        [
+          7,
+          2,
+          5
+        ],
+        [
+          7,
+          0,
+          7
+        ],
+        [
+          10,
+          0,
+          10
+        ]
+      ],
+      "actual": [
+        [
+          10,
+          0,
+          10
+        ],
+        [
+          10,
+          3,
+          7
+        ],
+        [
+          7,
+          0,
+          7
+        ],
+        [
+          7,
+          2,
+          5
+        ],
+        [
+          7,
+          0,
+          7
+        ],
+        [
+          10,
+          0,
+          10
+        ]
+      ],
+      "orders": [
+        {
+          "public_number": "VT-000001",
+          "payment_id": 1
+        },
+        {
+          "public_number": "VT-000002",
+          "payment_id": 2
+        }
+      ],
+      "test": "tests.test_stock.StockTests.test_01_manual_chain",
+      "status": "passed"
+    },
+    {
+      "scenario": "1 мест / 20 покупателей, повтор 1",
+      "expected": "1 успехов, 19 штатных отказов",
+      "actual": "1 успехов, 19 штатных отказов",
+      "orders": [
+        {
+          "public_number": "VT-000001",
+          "payment_id": null
+        }
+      ],
+      "test": "tests.test_stock.StockTests.test_02_03_concurrent_buyers",
+      "status": "passed"
+    },
+    {
+      "scenario": "1 мест / 20 покупателей, повтор 2",
+      "expected": "1 успехов, 19 штатных отказов",
+      "actual": "1 успехов, 19 штатных отказов",
+      "orders": [
+        {
+          "public_number": "VT-000001",
+          "payment_id": null
+        }
+      ],
+      "test": "tests.test_stock.StockTests.test_02_03_concurrent_buyers",
+      "status": "passed"
+    },
+    {
+      "scenario": "1 мест / 20 покупателей, повтор 3",
+      "expected": "1 успехов, 19 штатных отказов",
+      "actual": "1 успехов, 19 штатных отказов",
+      "orders": [
+        {
+          "public_number": "VT-000001",
+          "payment_id": null
+        }
+      ],
+      "test": "tests.test_stock.StockTests.test_02_03_concurrent_buyers",
+      "status": "passed"
+    },
+    {
+      "scenario": "1 мест / 20 покупателей, повтор 4",
+      "expected": "1 успехов, 19 штатных отказов",
+      "actual": "1 успехов, 19 штатных отказов",
+      "orders": [
+        {
+          "public_number": "VT-000001",
+          "payment_id": null
+        }
+      ],
+      "test": "tests.test_stock.StockTests.test_02_03_concurrent_buyers",
+      "status": "passed"
+    },
+    {
+      "scenario": "1 мест / 20 покупателей, повтор 5",
+      "expected": "1 успехов, 19 штатных отказов",
+      "actual": "1 успехов, 19 штатных отказов",
+      "orders": [
+        {
+          "public_number": "VT-000001",
+          "payment_id": null
+        }
+      ],
+      "test": "tests.test_stock.StockTests.test_02_03_concurrent_buyers",
+      "status": "passed"
+    },
+    {
+      "scenario": "10 мест / 50 покупателей, повтор 1",
+      "expected": "10 успехов, 40 штатных отказов",
+      "actual": "10 успехов, 40 штатных отказов",
+      "orders": [
+        {
+          "public_number": "VT-000001",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000002",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000003",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000004",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000005",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000006",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000007",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000008",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000009",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000010",
+          "payment_id": null
+        }
+      ],
+      "test": "tests.test_stock.StockTests.test_02_03_concurrent_buyers",
+      "status": "passed"
+    },
+    {
+      "scenario": "10 мест / 50 покупателей, повтор 2",
+      "expected": "10 успехов, 40 штатных отказов",
+      "actual": "10 успехов, 40 штатных отказов",
+      "orders": [
+        {
+          "public_number": "VT-000001",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000002",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000003",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000004",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000005",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000006",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000007",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000008",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000009",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000010",
+          "payment_id": null
+        }
+      ],
+      "test": "tests.test_stock.StockTests.test_02_03_concurrent_buyers",
+      "status": "passed"
+    },
+    {
+      "scenario": "10 мест / 50 покупателей, повтор 3",
+      "expected": "10 успехов, 40 штатных отказов",
+      "actual": "10 успехов, 40 штатных отказов",
+      "orders": [
+        {
+          "public_number": "VT-000001",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000002",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000003",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000004",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000005",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000006",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000007",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000008",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000009",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000010",
+          "payment_id": null
+        }
+      ],
+      "test": "tests.test_stock.StockTests.test_02_03_concurrent_buyers",
+      "status": "passed"
+    },
+    {
+      "scenario": "10 мест / 50 покупателей, повтор 4",
+      "expected": "10 успехов, 40 штатных отказов",
+      "actual": "10 успехов, 40 штатных отказов",
+      "orders": [
+        {
+          "public_number": "VT-000001",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000002",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000003",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000004",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000005",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000006",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000007",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000008",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000009",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000010",
+          "payment_id": null
+        }
+      ],
+      "test": "tests.test_stock.StockTests.test_02_03_concurrent_buyers",
+      "status": "passed"
+    },
+    {
+      "scenario": "10 мест / 50 покупателей, повтор 5",
+      "expected": "10 успехов, 40 штатных отказов",
+      "actual": "10 успехов, 40 штатных отказов",
+      "orders": [
+        {
+          "public_number": "VT-000001",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000002",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000003",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000004",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000005",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000006",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000007",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000008",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000009",
+          "payment_id": null
+        },
+        {
+          "public_number": "VT-000010",
+          "payment_id": null
+        }
+      ],
+      "test": "tests.test_stock.StockTests.test_02_03_concurrent_buyers",
+      "status": "passed"
+    },
+    {
+      "scenario": "Многотоварный отказ",
+      "expected": "А=3/0/3, заказов=0",
+      "actual": "А=(3, 0, 3), заказов=0",
+      "orders": [],
+      "test": "tests.test_stock.StockTests.test_04_multi_item_rollback",
+      "status": "passed"
+    },
+    {
+      "scenario": "10 повторов оформления",
+      "expected": "1 заказ; изменённый состав отклонён",
+      "actual": "1 заказ; HTTP 400",
+      "orders": [
+        {
+          "public_number": "VT-000001",
+          "payment_id": null
+        }
+      ],
+      "test": "tests.test_stock.StockTests.test_05_checkout_idempotency",
+      "status": "passed"
+    },
+    {
+      "scenario": "5 подтверждений и canceled",
+      "expected": "1 продажа, 120000 коп.",
+      "actual": "1 продажа, 120000 коп.",
+      "orders": [
+        {
+          "public_number": "VT-000001",
+          "payment_id": 1
+        }
+      ],
+      "test": "tests.test_stock.StockTests.test_06_payment_repeats_and_stale_cancel",
+      "status": "passed"
+    },
+    {
+      "scenario": "Отмена и срок",
+      "expected": "2/0/2; два освобождения",
+      "actual": "(2, 0, 2); два освобождения",
+      "orders": [
+        {
+          "public_number": "VT-000001",
+          "payment_id": 1
+        },
+        {
+          "public_number": "VT-000002",
+          "payment_id": 2
+        }
+      ],
+      "test": "tests.test_stock.StockTests.test_07_cancel_twice_and_expiry",
+      "status": "passed"
+    },
+    {
+      "scenario": "Гонка оплата/отмена 1",
+      "expected": "paid или payment_conflict без двойных движений",
+      "actual": "paid",
+      "orders": [
+        {
+          "public_number": "VT-000001",
+          "payment_id": 1
+        }
+      ],
+      "test": "tests.test_stock.StockTests.test_08_races_and_exact_boundary",
+      "status": "passed"
+    },
+    {
+      "scenario": "Гонка оплата/отмена 2",
+      "expected": "paid или payment_conflict без двойных движений",
+      "actual": "paid",
+      "orders": [
+        {
+          "public_number": "VT-000001",
+          "payment_id": 1
+        }
+      ],
+      "test": "tests.test_stock.StockTests.test_08_races_and_exact_boundary",
+      "status": "passed"
+    },
+    {
+      "scenario": "Гонка оплата/отмена 3",
+      "expected": "paid или payment_conflict без двойных движений",
+      "actual": "paid",
+      "orders": [
+        {
+          "public_number": "VT-000001",
+          "payment_id": 1
+        }
+      ],
+      "test": "tests.test_stock.StockTests.test_08_races_and_exact_boundary",
+      "status": "passed"
+    },
+    {
+      "scenario": "Гонка оплата/отмена 4",
+      "expected": "paid или payment_conflict без двойных движений",
+      "actual": "paid",
+      "orders": [
+        {
+          "public_number": "VT-000001",
+          "payment_id": 1
+        }
+      ],
+      "test": "tests.test_stock.StockTests.test_08_races_and_exact_boundary",
+      "status": "passed"
+    },
+    {
+      "scenario": "Гонка оплата/отмена 5",
+      "expected": "paid или payment_conflict без двойных движений",
+      "actual": "paid",
+      "orders": [
+        {
+          "public_number": "VT-000001",
+          "payment_id": 1
+        }
+      ],
+      "test": "tests.test_stock.StockTests.test_08_races_and_exact_boundary",
+      "status": "passed"
+    },
+    {
+      "scenario": "Граница срока -1 мкс",
+      "expected": "paid",
+      "actual": "paid",
+      "orders": [
+        {
+          "public_number": "VT-000001",
+          "payment_id": 1
+        }
+      ],
+      "test": "tests.test_stock.StockTests.test_08_races_and_exact_boundary",
+      "status": "passed"
+    },
+    {
+      "scenario": "Граница срока 0 мкс",
+      "expected": "payment_conflict",
+      "actual": "payment_conflict",
+      "orders": [
+        {
+          "public_number": "VT-000001",
+          "payment_id": 1
+        }
+      ],
+      "test": "tests.test_stock.StockTests.test_08_races_and_exact_boundary",
+      "status": "passed"
+    },
+    {
+      "scenario": "Граница срока 1 мкс",
+      "expected": "payment_conflict",
+      "actual": "payment_conflict",
+      "orders": [
+        {
+          "public_number": "VT-000001",
+          "payment_id": 1
+        }
+      ],
+      "test": "tests.test_stock.StockTests.test_08_races_and_exact_boundary",
+      "status": "passed"
+    },
+    {
+      "scenario": "Гонка оплата/срок 1",
+      "expected": "payment_conflict; 1/0/1",
+      "actual": "payment_conflict; (1, 0, 1)",
+      "orders": [
+        {
+          "public_number": "VT-000001",
+          "payment_id": 1
+        }
+      ],
+      "test": "tests.test_stock.StockTests.test_08_races_and_exact_boundary",
+      "status": "passed"
+    },
+    {
+      "scenario": "Гонка оплата/срок 2",
+      "expected": "payment_conflict; 1/0/1",
+      "actual": "payment_conflict; (1, 0, 1)",
+      "orders": [
+        {
+          "public_number": "VT-000001",
+          "payment_id": 1
+        }
+      ],
+      "test": "tests.test_stock.StockTests.test_08_races_and_exact_boundary",
+      "status": "passed"
+    },
+    {
+      "scenario": "Гонка оплата/срок 3",
+      "expected": "payment_conflict; 1/0/1",
+      "actual": "payment_conflict; (1, 0, 1)",
+      "orders": [
+        {
+          "public_number": "VT-000001",
+          "payment_id": 1
+        }
+      ],
+      "test": "tests.test_stock.StockTests.test_08_races_and_exact_boundary",
+      "status": "passed"
+    },
+    {
+      "scenario": "Гонка оплата/срок 4",
+      "expected": "payment_conflict; 1/0/1",
+      "actual": "payment_conflict; (1, 0, 1)",
+      "orders": [
+        {
+          "public_number": "VT-000001",
+          "payment_id": 1
+        }
+      ],
+      "test": "tests.test_stock.StockTests.test_08_races_and_exact_boundary",
+      "status": "passed"
+    },
+    {
+      "scenario": "Гонка оплата/срок 5",
+      "expected": "payment_conflict; 1/0/1",
+      "actual": "payment_conflict; (1, 0, 1)",
+      "orders": [
+        {
+          "public_number": "VT-000001",
+          "payment_id": 1
+        }
+      ],
+      "test": "tests.test_stock.StockTests.test_08_races_and_exact_boundary",
+      "status": "passed"
+    },
+    {
+      "scenario": "Поздняя оплата А после продажи Б",
+      "expected": "Поток 120000, результат 50000, склад 0/0/0",
+      "actual": "Поток 120000, результат 50000, склад (0, 0, 0)",
+      "orders": [
+        {
+          "public_number": "VT-000001",
+          "payment_id": 1
+        },
+        {
+          "public_number": "VT-000002",
+          "payment_id": 2
+        }
+      ],
+      "test": "tests.test_stock.StockTests.test_09_late_payment_after_other_sale",
+      "status": "passed"
+    },
+    {
+      "scenario": "Перезапуск с резервом",
+      "expected": "1/0/1 при старте; повтор без изменений",
+      "actual": "(1, 0, 1)",
+      "orders": [
+        {
+          "public_number": "VT-000001",
+          "payment_id": 1
+        }
+      ],
+      "test": "tests.test_stock.StockTests.test_10_restart_expired_reservation",
+      "status": "passed"
+    },
+    {
+      "scenario": "Перезапуск возврата и потеря ответа",
+      "expected": "1 receipt, 1 refund, 1 ответ провайдера; склад 1/0/1",
+      "actual": "Совпало по таблицам PostgreSQL",
+      "orders": [
+        {
+          "public_number": "VT-000001",
+          "payment_id": 1
+        }
+      ],
+      "test": "tests.test_stock.StockTests.test_11_crash_refund_failure_and_lost_response",
+      "status": "passed"
+    },
+    {
+      "scenario": "Останов до commit",
+      "expected": "Откат; повтор тем же ключом: 2/1/1",
+      "actual": "(2, 1, 1)",
+      "orders": [
+        {
+          "public_number": "VT-000002",
+          "payment_id": null
+        }
+      ],
+      "test": "tests.test_stock.StockTests.test_12_crash_inside_checkout",
+      "status": "passed"
+    },
+    {
+      "scenario": "Права и подмена полей",
+      "expected": "Отказ; склад 1/1/0, поступления 0",
+      "actual": "Склад (1, 1, 0), поступления 0",
+      "orders": [
+        {
+          "public_number": "VT-000001",
+          "payment_id": 1
+        }
+      ],
+      "test": "tests.test_stock.StockTests.test_13_roles_tampering_and_supply_idempotency",
+      "status": "passed"
+    },
+    {
+      "scenario": "Два сервера, повтор 1",
+      "expected": "1 успех, 19 отказов",
+      "actual": "1 успех, 19 отказов",
+      "orders": [
+        {
+          "public_number": "VT-000001",
+          "payment_id": null
+        }
+      ],
+      "test": "tests.test_stock.StockTests.test_14_two_server_processes",
+      "status": "passed"
+    },
+    {
+      "scenario": "Два сервера, повтор 2",
+      "expected": "1 успех, 19 отказов",
+      "actual": "1 успех, 19 отказов",
+      "orders": [
+        {
+          "public_number": "VT-000001",
+          "payment_id": null
+        }
+      ],
+      "test": "tests.test_stock.StockTests.test_14_two_server_processes",
+      "status": "passed"
+    },
+    {
+      "scenario": "Два сервера, повтор 3",
+      "expected": "1 успех, 19 отказов",
+      "actual": "1 успех, 19 отказов",
+      "orders": [
+        {
+          "public_number": "VT-000001",
+          "payment_id": null
+        }
+      ],
+      "test": "tests.test_stock.StockTests.test_14_two_server_processes",
+      "status": "passed"
+    },
+    {
+      "scenario": "Два сервера, повтор 4",
+      "expected": "1 успех, 19 отказов",
+      "actual": "1 успех, 19 отказов",
+      "orders": [
+        {
+          "public_number": "VT-000001",
+          "payment_id": null
+        }
+      ],
+      "test": "tests.test_stock.StockTests.test_14_two_server_processes",
+      "status": "passed"
+    },
+    {
+      "scenario": "Два сервера, повтор 5",
+      "expected": "1 успех, 19 отказов",
+      "actual": "1 успех, 19 отказов",
+      "orders": [
+        {
+          "public_number": "VT-000001",
+          "payment_id": null
+        }
+      ],
+      "test": "tests.test_stock.StockTests.test_14_two_server_processes",
+      "status": "passed"
+    },
+    {
+      "scenario": "Прежние заказы",
+      "expected": "Старая ожидающая: резерв; старый оплаченный возврат: без движения мест",
+      "actual": "Склад (1, 0, 1) после миграции и возврата",
+      "orders": [
+        {
+          "public_number": "VT-LEGACY",
+          "payment_id": 1
+        },
+        {
+          "public_number": "VT-PAST",
+          "payment_id": 2
+        }
+      ],
+      "test": "tests.test_stock.StockTests.test_15_legacy_orders_preserve_stock",
+      "status": "passed"
+    }
+  ]
+}

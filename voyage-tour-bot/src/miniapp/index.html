@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Вояж-тур · Кабинет</title><link rel="stylesheet" href="/static/style.css">
+<script src="https://telegram.org/js/telegram-web-app.js"></script><script defer src="/static/app.js"></script></head>
+<body><main>
+<header><div><small>ВОЯЖ-ТУР / МЕНЕДЖЕР</small><h1>Кабинет магазина</h1></div><button id="refresh" type="button">Обновить</button></header>
+<p class="demo">Демонстрация без платёжного провайдера · реальные деньги не списываются</p>
+<p id="message" role="status" aria-live="polite"></p>
+<form id="period" class="panel filters"><label>С даты<input id="start" type="date"></label><label>По дату включительно<input id="end" type="date"></label><button>Применить</button><button id="all-time" type="button" class="secondary">Всё время</button></form>
+<p id="period-label" class="muted"></p>
+<section class="metrics" aria-label="Финансовая сводка">
+<article class="panel"><small>Денежный поток</small><strong id="cash">—</strong><p>Поступления − возвраты − расходы</p></article>
+<article class="panel"><small>Учебный результат</small><strong id="result">—</strong><p>Поток − себестоимость оплаченных + себестоимость возвращённых</p></article>
+</section>
+<p id="breakdown" class="muted"></p><p class="muted">Учитываются даты подтверждения, время Москвы. Возврат заказа прошлого периода может дать отрицательный результат. Закупочную стоимость не добавляйте в расходы.</p>
+<nav aria-label="Разделы"><button data-tab="orders" class="selected">Заказы</button><button data-tab="expenses">Расход</button><button data-tab="operations">Финансы</button><button data-tab="stock">Склад</button></nav>
+<section id="orders" class="tab"><div class="section-heading"><h2>Заказы</h2><select id="order-status" aria-label="Статус заказа"><option value="">Все статусы</option><option value="awaiting_payment">Ожидает оплаты</option><option value="paid">Оплачен</option><option value="refunded">Возвращён</option><option value="cancelled">Отменён</option></select></div><div id="order-list"></div><button id="more-orders" class="secondary">Ещё заказы</button></section>
+<section id="expenses" class="tab" hidden><h2 id="expense-title">Новый расход</h2><form id="expense-form" class="panel stack">
+<label>Сумма, ₽<input id="expense-amount" inputmode="decimal" type="text" placeholder="100,00" required></label>
+<label>Категория<select id="expense-category"><option value="delivery">Трансфер / доставка</option><option value="documents">Виза / документы</option><option value="advertising">Реклама</option><option value="commission">Комиссия</option><option value="other">Другое</option></select></label>
+<label>Дата<input id="expense-date" type="date" required></label><label>Описание<input id="expense-description" maxlength="300" required placeholder="Трансфер для клиента"></label>
+<button id="expense-submit">Записать расход</button><button type="button" id="expense-reset" class="secondary">Новый расход</button>
+<small>Исправление пересчитывает исходный период. Все версии и отмены сохраняются в журнале.</small></form></section>
+<section id="operations" class="tab" hidden><h2>История операций</h2><div id="operation-list"></div><button id="more-operations" class="secondary">Ещё операции</button></section>
+<section id="stock" class="tab" hidden>
+<h2>Места в турах</h2><p class="muted">На складе / в резерве / доступно. Корзина не резервирует места. Сервер проверяет срок при подтверждении: равенство сроку уже считается поздней оплатой.</p>
+<div id="stock-balances"></div>
+<h3>Поступление мест</h3><form id="supply-form" class="panel stack"><label>Тур<select id="supply-product" required></select></label><label>Количество<input id="supply-quantity" type="number" min="1" max="1000000" step="1" value="10" required></label><label>Описание<input id="supply-description" maxlength="300" required placeholder="Учебная квота туроператора"></label><button id="supply-submit">Записать поступление</button></form>
+<h3>Активные резервы</h3><div id="stock-reservations"></div>
+<h3>Платежи и задания возврата</h3><p class="muted">Поздний платёж временно входит в поступления до подтверждения возврата; себестоимость и места не списываются.</p><div id="stock-refunds"></div>
+<h3>Журнал движений</h3><div id="stock-movements"></div><button id="more-stock" class="secondary">Ещё записи склада</button>
+</section>
+<dialog id="order-dialog"><div class="section-heading"><h2>Карточка заказа</h2><button id="close-order" type="button" class="secondary">Закрыть</button></div><div id="order-detail"></div></dialog>
+</main></body></html>

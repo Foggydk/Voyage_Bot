@@ -13,8 +13,7 @@ from src.config import get_ai_settings
 
 
 class TourAssistant(Protocol):
-    async def reply(self, user_message: str, history: list[dict[str, str]]) -> str:
-        ...
+    async def reply(self, user_message: str, history: list[dict[str, str]]) -> str: ...
 
 
 class PlaceholderTourAssistant:

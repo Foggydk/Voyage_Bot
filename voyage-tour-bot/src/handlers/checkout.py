@@ -26,6 +26,8 @@ from src.keyboards import (
 from src.services import cart as cart_service
 from src.services import orders as orders_service
 from src.data.tours import format_price
+from src.handlers.payments import payment_keyboard
+from src.services.checkout import prepare_checkout, complete_checkout
 
 logger = logging.getLogger(__name__)
 
@@ -34,13 +36,16 @@ NAME_KEY = "checkout_name"
 PICKUP_KEY = "checkout_pickup"
 
 ASK_NAME_TEXT = (
-    "Оформление заявки.\n\n"
-    "Напишите имя, как в документах для ваучера.\n"
-    "Отмена: /cancel"
+    "Оформление заявки.\n\nНапишите имя, как в документах для ваучера.\nОтмена: /cancel"
 )
 NEED_BUTTONS = "Сейчас оформление заявки. Выберите пункт на кнопках или /cancel."
 MENU_BUTTONS = {BTN_CATALOG, BTN_AI, BTN_CART, BTN_ORDERS, BTN_HELP}
 CANCELLED = "Оформление отменено. Корзина сохранена."
+EMPTY_CART_TEXT = "Корзина пуста. Добавьте тур из каталога."
+ALREADY_DONE_TEXT = (
+    "Корзина пуста — заявку сохранить нельзя. "
+    "Если вы уже подтверждали заявку, она в разделе «Мои заказы»."
+)
 DB_REQUIRED = (
     "Чтобы сохранить заявку, укажите рабочий DATABASE_URL в .env "
     "(пароль PostgreSQL вместо YOUR_PASSWORD) и перезапустите бота."
@@ -61,7 +66,7 @@ def build_checkout_handler() -> ConversationHandler:
                 MessageHandler(filters.TEXT & ~filters.COMMAND, remind_buttons),
             ],
             CONFIRM: [
-                CallbackQueryHandler(confirm_order, pattern=r"^checkout:ok$"),
+                CallbackQueryHandler(confirm_order, pattern=r"^checkout:ok:"),
                 CallbackQueryHandler(start_checkout, pattern=r"^checkout:start$"),
                 MessageHandler(filters.TEXT & ~filters.COMMAND, remind_buttons),
             ],
@@ -78,23 +83,25 @@ def build_checkout_handler() -> ConversationHandler:
 def _clear_draft(context: ContextTypes.DEFAULT_TYPE) -> None:
     context.user_data.pop(NAME_KEY, None)
     context.user_data.pop(PICKUP_KEY, None)
+    context.user_data.pop("checkout_request_id", None)
 
 
 async def start_checkout(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     query = update.callback_query
     if query is not None:
         await query.answer()
-
-    if get_pool(context) is None:
-        text = DB_REQUIRED
-        if query is not None:
-            await query.edit_message_text(text)
+    if update.effective_user is None:
         return ConversationHandler.END
 
-    if cart_service.is_empty(context):
-        text = "Корзина пуста. Добавьте тур из каталога."
+    if get_pool(context) is None:
         if query is not None:
-            await query.edit_message_text(text)
+            await query.edit_message_text(DB_REQUIRED)
+        return ConversationHandler.END
+
+    cart = await cart_service.items(context, update.effective_user.id)
+    if not cart:
+        if query is not None:
+            await query.edit_message_text(EMPTY_CART_TEXT)
         return ConversationHandler.END
 
     _clear_draft(context)
@@ -128,17 +135,31 @@ async def receive_name(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
 
 async def receive_pickup(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     query = update.callback_query
-    if query is None or query.data is None:
+    if query is None or query.data is None or update.effective_user is None:
         return ASK_PICKUP
     code = query.data.rsplit(":", 1)[-1]
     if code not in orders_service.PICKUP_LABELS:
         await query.answer("Неизвестный способ получения.", show_alert=True)
         return ASK_PICKUP
     await query.answer()
+
+    cart = await cart_service.items(context, update.effective_user.id)
+    if not cart:
+        _clear_draft(context)
+        await query.edit_message_text(EMPTY_CART_TEXT)
+        return ConversationHandler.END
+
     context.user_data[PICKUP_KEY] = code
+    request_id = await prepare_checkout(
+        get_pool(context),
+        update.effective_user,
+        context.user_data[NAME_KEY],
+        code,
+    )
+    context.user_data["checkout_request_id"] = request_id
     await query.edit_message_text(
-        _summary_text(context),
-        reply_markup=checkout_confirm_keyboard(),
+        _summary_text(context, cart),
+        reply_markup=checkout_confirm_keyboard(request_id),
     )
     return CONFIRM
 
@@ -148,34 +169,35 @@ async def confirm_order(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
     if query is None or update.effective_user is None:
         return ConversationHandler.END
     pool = get_pool(context)
-    name = context.user_data.get(NAME_KEY)
-    pickup = context.user_data.get(PICKUP_KEY)
-    if pool is None or not name or not pickup:
-        await query.answer("Данные заявки сброшены. Начните оформление снова.", show_alert=True)
-        return ConversationHandler.END
-    if cart_service.is_empty(context):
-        await query.answer("Корзина пуста.", show_alert=True)
-        await query.edit_message_text("Корзина пуста, заявку сохранить нельзя.")
-        _clear_draft(context)
+    request_id = query.data.removeprefix("checkout:ok:") if query.data else ""
+    if pool is None or not request_id:
+        await query.answer(
+            "Данные заявки сброшены. Начните оформление снова.", show_alert=True
+        )
         return ConversationHandler.END
 
     try:
-        order = await orders_service.create_order(
-            pool,
-            update.effective_user,
-            name,
-            pickup,
-            cart_service.items(context),
+        # Сохранённый ключ возвращает тот же заказ даже после перезапуска бота.
+        order = await complete_checkout(pool, update.effective_user, request_id)
+    except orders_service.EmptyCartError:
+        _clear_draft(context)
+        await query.answer(
+            "Корзина пуста. Возможно, заявка уже оформлена.", show_alert=True
         )
+        await query.edit_message_text(ALREADY_DONE_TEXT)
+        return ConversationHandler.END
+    except ValueError as exc:
+        await query.answer(str(exc)[:190], show_alert=True)
+        return CONFIRM
     except Exception:
         logger.exception("Ошибка записи заявки в PostgreSQL")
-        await query.answer("Не удалось сохранить заявку.", show_alert=True)
+        await query.answer("Временно не удалось проверить заказ.")
         await query.edit_message_text(
-            "Не получилось записать заявку в базу. Проверьте PostgreSQL и DATABASE_URL."
+            "Нажмите «Повторить оформление». Если заявка уже сохранена, откроется тот же заказ.",
+            reply_markup=checkout_confirm_keyboard(request_id, retry=True),
         )
         return CONFIRM
 
-    cart_service.clear(context)
     _clear_draft(context)
     await query.answer("Заявка сохранена")
     await query.edit_message_text(
@@ -186,7 +208,12 @@ async def confirm_order(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
         f"Получение: {orders_service.pickup_label(order.pickup_method)}\n"
         f"Оплата: {orders_service.PAYMENT_LABEL}\n"
         f"Сумма: {format_price(order.total_amount)}\n\n"
-        "Список заявок — кнопка «Мои заказы»."
+        f"Резерв до: {order.expires_at.isoformat() if order.expires_at else 'нет активного резерва'}. "
+        "Подтверждение после срока означает учебный возврат.\n"
+        "Список заявок — кнопка «Мои заказы».",
+        reply_markup=payment_keyboard(order.public_number, order.payment_status)
+        if order.status == "awaiting_payment"
+        else None,
     )
     if query.message is not None:
         await query.message.reply_text("Меню «Вояж-тур».", reply_markup=main_menu())
@@ -213,10 +240,10 @@ async def cancel_checkout(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     return ConversationHandler.END
 
 
-def _summary_text(context: ContextTypes.DEFAULT_TYPE) -> str:
+def _summary_text(context: ContextTypes.DEFAULT_TYPE, cart: dict[int, int]) -> str:
     name = context.user_data.get(NAME_KEY, "")
     pickup = context.user_data.get(PICKUP_KEY, "")
-    cart_text, _total = cart_service.cart_lines(context)
+    cart_text, _total = cart_service.format_cart(cart)
     return (
         "Проверьте заявку:\n\n"
         f"Имя: {name}\n"

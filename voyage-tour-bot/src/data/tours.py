@@ -18,6 +18,7 @@ class Tour:
     tour_type: str
     duration_days: int
     price: int
+    cost: int
 
 
 TOURS: tuple[Tour, ...] = (
@@ -33,6 +34,7 @@ TOURS: tuple[Tour, ...] = (
         tour_type="leisure",
         duration_days=8,
         price=89000,
+        cost=55000,
     ),
     Tour(
         id=2,
@@ -46,6 +48,7 @@ TOURS: tuple[Tour, ...] = (
         tour_type="shopping",
         duration_days=6,
         price=145000,
+        cost=90000,
     ),
     Tour(
         id=3,
@@ -59,6 +62,7 @@ TOURS: tuple[Tour, ...] = (
         tour_type="leisure",
         duration_days=10,
         price=72000,
+        cost=45000,
     ),
     Tour(
         id=4,
@@ -72,6 +76,7 @@ TOURS: tuple[Tour, ...] = (
         tour_type="shopping",
         duration_days=5,
         price=98000,
+        cost=60000,
     ),
     Tour(
         id=5,
@@ -85,6 +90,7 @@ TOURS: tuple[Tour, ...] = (
         tour_type="leisure",
         duration_days=9,
         price=110000,
+        cost=70000,
     ),
 )
 
@@ -96,4 +102,4 @@ def get_tour(tour_id: int) -> Tour | None:
 
 
 def format_price(amount: int) -> str:
-    return f"{amount:,} ₽".replace(",", " ")
+    return f"{amount:,.2f} ₽".replace(",", " ").replace(".", ",")
